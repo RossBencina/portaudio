@@ -3,7 +3,7 @@ name: MSBuild
 on: [push]
 
 env:
-  MSDEVENV_PATH: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.com"
+  MSDEVENV_PATH: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.com
 
   # Path to the solution file relative to the root of the project.
   SOLUTION_FILE_PATH: ./build/msvc/portaudio.sln
