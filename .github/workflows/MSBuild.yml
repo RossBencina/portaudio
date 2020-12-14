@@ -25,12 +25,13 @@ jobs:
       # pipe to file to ensure that it terminates https://stackoverflow.com/questions/48896010/occasionally-occurring-msbuild-error-msb3428/48918105#48918105
       #run: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.com" ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
       run:
-        import os
-        devenvcmd = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\devenv.com"
-        solfilepath = "${{env.SOLUTION_FILE_PATH}}"
-        command = "\"" + devenvcmd + "\" " + solfilepath + " /Upgrade /NoSplash"
-        res = os.system(command)
-      shell: python
+        vcupgrade "${{env.SOLUTION_FILE_PATH}}"
+        #import os
+        #devenvcmd = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\devenv.com"
+        #solfilepath = "${{env.SOLUTION_FILE_PATH}}"
+        #command = "\"" + devenvcmd + "\" " + solfilepath + " /Upgrade /NoSplash"
+        #res = os.system(command)
+      #shell: python
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
