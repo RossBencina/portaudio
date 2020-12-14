@@ -34,9 +34,9 @@ jobs:
           set InstallDir=%%i
           if exist "%InstallDir%\Common7\Tools\vsdevcmd.bat" (
             "%InstallDir%\Common7\Tools\vsdevcmd.bat" %*
-            devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
           )
         )
+        devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
   
       shell: cmd
 
