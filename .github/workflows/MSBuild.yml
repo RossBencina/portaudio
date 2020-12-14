@@ -25,7 +25,7 @@ jobs:
       # We keep the old version in the repo for backwards compatibility
       # see https://docs.microsoft.com/en-us/visualstudio/ide/reference/upgrade-devenv-exe?view=vs-2019
       # pipe to file to ensure that it terminates https://stackoverflow.com/questions/48896010/occasionally-occurring-msbuild-error-msb3428/48918105#48918105
-      run: ${{'env.MSDEVENV_PATH'}} ${{env.SOLUTION_FILE_PATH}} /Upgrade
+      run: "$env.MSDEVENV_PATH" ${{env.SOLUTION_FILE_PATH}} /Upgrade
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
