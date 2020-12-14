@@ -18,6 +18,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1
+
     - name: Upgrade Solution
       # Upgrade entire solution and all of its projects to the latest version of MSVC
       # We keep the old version in the repo for backwards compatibility
@@ -26,15 +29,6 @@ jobs:
       #run: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.com" ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
       run:
         vcupgrade "${{env.SOLUTION_FILE_PATH}}"
-        #import os
-        #devenvcmd = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\devenv.com"
-        #solfilepath = "${{env.SOLUTION_FILE_PATH}}"
-        #command = "\"" + devenvcmd + "\" " + solfilepath + " /Upgrade /NoSplash"
-        #res = os.system(command)
-      #shell: python
-
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
