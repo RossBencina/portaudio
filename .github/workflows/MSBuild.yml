@@ -3,8 +3,6 @@ name: MSBuild
 on: [push]
 
 env:
-  MSDEVENV_PATH: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.com"
-
   # Path to the solution file relative to the root of the project.
   SOLUTION_FILE_PATH: ./build/msvc/portaudio.sln
 
@@ -22,13 +20,6 @@ jobs:
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
-
-    - name: Upgrade Solution
-      # Upgrade entire solution and all of its projects to the latest version of MSVC
-      # We keep the old version in the repo for backwards compatibility
-      # see https://docs.microsoft.com/en-us/visualstudio/ide/reference/upgrade-devenv-exe?view=vs-2019
-      # pipe to file to ensure that it terminates https://stackoverflow.com/questions/48896010/occasionally-occurring-msbuild-error-msb3428/48918105#48918105
-      run: ${{env.MSDEVENV_PATH}} ${{env.SOLUTION_FILE_PATH}} /Upgrade
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
