@@ -32,12 +32,12 @@ jobs:
       run:
         for /f "usebackq tokens=*" %%i in (`vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
           set InstallDir=%%i
+          if exist "%InstallDir%\Common7\Tools\vsdevcmd.bat" (
+            "%InstallDir%\Common7\Tools\vsdevcmd.bat" %*
+            devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
+          )
         )
-
-        if exist "%InstallDir%\Common7\Tools\vsdevcmd.bat" (
-          "%InstallDir%\Common7\Tools\vsdevcmd.bat" %*
-          devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
-        )
+  
       shell: cmd
 
     - name: Build
