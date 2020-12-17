@@ -60,13 +60,42 @@ jobs:
       #shell: cmd
 
     - name: Remove ASIO Files
+      # Process the project files to remove ASIO-related sources and includes
       run: |
+        # .vcproj file
         $xdoc = new-object System.Xml.XmlDocument
-        $file = resolve-path("${{env.VCXPROJ_FILE_PATH}}")
-        $xdoc.load($file)
-        $nodes = $xdoc.SelectNodes("//ClCompile[contains(@Include, 'hostapi/asio')]")
+        $vcxprojFile = resolve-path("${{env.VCXPROJ_FILE_PATH}}")
+        $xdoc.load($vcxprojFile)
+        $namespace = New-Object -TypeName "Xml.XmlNamespaceManager" -ArgumentList $xdoc.NameTable
+        $namespace.AddNamespace("vs", $xdoc.DocumentElement.NamespaceURI)
+        $nodes = $xdoc.SelectNodes("//vs:ClCompile[contains(@Include, '..\src\hostapi\asio')]", $namespace)
+        Write-Output "deleting ASIO related compilation nodes from .vcxproj:"
         Write-Output $nodes
-        $xdoc.save($file)
+        ForEach($node in $nodes) {
+          $parent = $node.ParentNode
+          $parent.RemoveChild($node)
+        }
+        $xdoc.save($vcxprojFile)
+        # .vcproj.filters file
+        $vcxprojFiltersFile = resolve-path("${{env.VCXPROJ_FILTERS_FILE_PATH}}")
+        $xdoc.load($vcxprojFiltersFile)
+        $namespace = New-Object -TypeName "Xml.XmlNamespaceManager" -ArgumentList $xdoc.NameTable
+        $namespace.AddNamespace("vs", $xdoc.DocumentElement.NamespaceURI)
+        $nodes = $xdoc.SelectNodes("//vs:ClCompile[contains(@Include, '..\src\hostapi\asio')]", $namespace)
+        Write-Output "deleting ASIO related compilation nodes from .vcxproj.filters:"
+        Write-Output $nodes
+        ForEach($node in $nodes) {
+          $parent = $node.ParentNode
+          $parent.RemoveChild($node)
+        }
+        $nodes = $xdoc.SelectNodes("//vs:ClInclude[contains(@Include, 'pa_asio.h')]", $namespace)
+        Write-Output "deleting ASIO related include nodes from .vcxproj.filters:"
+        Write-Output $nodes
+        ForEach($node in $nodes) {
+          $parent = $node.ParentNode
+          $parent.RemoveChild($node)
+        }
+        $xdoc.save($vcxprojFiltersFile)
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
