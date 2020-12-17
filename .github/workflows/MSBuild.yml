@@ -9,6 +9,7 @@ env:
   VCXPROJ_FILE_PATH: ./build/msvc/portaudio.vcxproj
   VCXPROJ_FILTERS_FILE_PATH: ./build/msvc/portaudio.vcxproj.filters
   VCXPROJ_USER_FILE_PATH: ./build/msvc/portaudio.vcxproj.user
+  DEF_FILE_PATH: ./build/msvc/portaudio.def
 
   # Configuration type to build.
   # You can convert this to a build matrix if you need coverage of multiple configuration types.
@@ -26,24 +27,14 @@ jobs:
       uses: microsoft/setup-msbuild@v1
 
     - name: Upgrade Solution
-      # Upgrade entire solution and all of its projects to the latest version of MSVC
-      # We keep the old version in the repo for backwards compatibility
+      # We maintain our vcproj file in an old format to maintain backwards compatibility
+      # This step upgrades the project to the latest version of MSVC
       # see https://docs.microsoft.com/en-us/visualstudio/ide/reference/upgrade-devenv-exe?view=vs-2019
       # pipe to file to ensure that it terminates https://stackoverflow.com/questions/48896010/occasionally-occurring-msbuild-error-msb3428/48918105#48918105
-      #run: devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
-      #run: vswhere -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
-      # we have vswhere, so try using vsdevcmd.bat to add devenv to the path:
-      #run:
-      #  for /f "usebackq tokens=*" %%i in (`vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
-      #    set InstallDir=%%i
-      #    "%InstallDir%\Common7\Tools\vsdevcmd.bat" %*
-      #    devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
-      #  )        
-  
       run: |
         $devenv = & vswhere.exe '-property' productPath
         Write-Output "$devenv"
-        & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash
+        & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash | Out-Null
         Write-Output "devenv launched"
         while (!(Test-Path "${{env.VCXPROJ_FILE_PATH}}")) { Start-Sleep 10 }
         Write-Output "vcxproj found"
@@ -52,17 +43,10 @@ jobs:
         Start-Sleep -Seconds 10
         Write-Output "done."
 
-      #run:
-      #  FOR /F "tokens=* USEBACKQ" %%F IN (`vswhere.exe -property productPath`) DO (
-      #    SET devenvExe=%%F
-      #  )
-      #  "%devenvExe%" ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
-      #shell: cmd
-
     - name: Remove ASIO Files
-      # Process the project files to remove ASIO-related sources and includes
+      # Process the project files to remove ASIO-related sources and includes (since we can not access the ASIO SDK in a public build)
       run: |
-        # .vcproj file
+        # Process .vcxproj file: remove source files
         $xdoc = new-object System.Xml.XmlDocument
         $vcxprojFile = resolve-path("${{env.VCXPROJ_FILE_PATH}}")
         $xdoc.load($vcxprojFile)
@@ -76,7 +60,7 @@ jobs:
           $parent.RemoveChild($node)
         }
         $xdoc.save($vcxprojFile)
-        # .vcproj.filters file
+        # Process .vcxproj.filters file: remove source files and includes
         $vcxprojFiltersFile = resolve-path("${{env.VCXPROJ_FILTERS_FILE_PATH}}")
         $xdoc.load($vcxprojFiltersFile)
         $namespace = New-Object -TypeName "Xml.XmlNamespaceManager" -ArgumentList $xdoc.NameTable
@@ -96,6 +80,9 @@ jobs:
           $parent.RemoveChild($node)
         }
         $xdoc.save($vcxprojFiltersFile)
+        # Process .def file: remove PaAsio_ symbols
+        Set-Content -Path "${{env.DEF_FILE_PATH}}" -Value (Get-Content -Path "${{env.DEF_FILE_PATH}}" | Select-String -Pattern 'PaAsio_' -NotMatch)
+
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
