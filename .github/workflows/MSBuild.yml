@@ -21,16 +21,17 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
-
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
+
+    - uses: actions/checkout@v2
 
     - name: Upgrade Solution
       # We maintain our vcproj file in an old format to maintain backwards compatibility
       # This step upgrades the project to the latest version of MSVC
       # see https://docs.microsoft.com/en-us/visualstudio/ide/reference/upgrade-devenv-exe?view=vs-2019
       # pipe to file to ensure that it terminates https://stackoverflow.com/questions/48896010/occasionally-occurring-msbuild-error-msb3428/48918105#48918105
+      # discussion of using vswhere.exe here: https://stackoverflow.com/questions/65287456/how-to-upgrade-a-visual-studio-project-from-within-a-github-action/65311868#65311868
       run: |
         $devenv = & vswhere.exe '-property' productPath
         Write-Output "$devenv"
@@ -82,7 +83,6 @@ jobs:
         $xdoc.save($vcxprojFiltersFile)
         # Process .def file: remove PaAsio_ symbols
         Set-Content -Path "${{env.DEF_FILE_PATH}}" -Value (Get-Content -Path "${{env.DEF_FILE_PATH}}" | Select-String -Pattern 'PaAsio_' -NotMatch)
-
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
