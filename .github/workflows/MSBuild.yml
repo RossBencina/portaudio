@@ -41,10 +41,15 @@ jobs:
   
       run: |
         $devenv = & vswhere.exe '-property' productPath
+        Write-Output "$devenv"
         & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash
+        Write-Output "devenv launched"
         while (!(Test-Path "${{env.VCXPROJ_FILE_PATH}}")) { Start-Sleep 10 }
+        Write-Output "vcxproj found"
         while (!(Test-Path "${{env.VCXPROJ_FILTERS_FILE_PATH}}")) { Start-Sleep 10 }
+        Write-Output "vcxproj.filters found"
         while (!(Test-Path "${{env.VCXPROJ_USER_FILE_PATH}}")) { Start-Sleep 10 }
+        Write-Output "vcxproj.user found"
         Start-Sleep -Seconds 10
 
       #run:
