@@ -38,7 +38,7 @@ jobs:
   
       run:
         $devenv = & vswhere.exe '-property' productPath
-        & $devenv '${{env.SOLUTION_FILE_PATH}}' /Upgrade /NoSplash
+        & $devenv ${ ${{env.SOLUTION_FILE_PATH}} } /Upgrade /NoSplash
       
       #run:
       #  FOR /F "tokens=* USEBACKQ" %%F IN (`vswhere.exe -property productPath`) DO (
