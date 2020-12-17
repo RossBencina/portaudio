@@ -49,8 +49,6 @@ jobs:
         Write-Output "vcxproj found"
         while (!(Test-Path "${{env.VCXPROJ_FILTERS_FILE_PATH}}")) { Start-Sleep 10 }
         Write-Output "vcxproj.filters found"
-        while (!(Test-Path "${{env.VCXPROJ_USER_FILE_PATH}}")) { Start-Sleep 10 }
-        Write-Output "vcxproj.user found"
         Start-Sleep -Seconds 10
 
       #run:
