@@ -39,7 +39,7 @@ jobs:
   
       run: |
         $devenv = & vswhere.exe '-property' productPath
-        & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash /Out "${{env.VCXPROJ_FILE_PATH}}"
+        & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash
         while (!(Test-Path "${{env.VCXPROJ_FILE_PATH}}")) { Start-Sleep 10 }
         Start-Sleep -Seconds 10
 
