@@ -5,6 +5,7 @@ on: [push]
 env:
   # Path to the solution file relative to the root of the project.
   SOLUTION_FILE_PATH: ./build/msvc/portaudio.sln
+  VCPROJ_FILE_PATH: ./build/msvc/portaudio.vcproj
 
   # Configuration type to build.
   # You can convert this to a build matrix if you need coverage of multiple configuration types.
@@ -39,7 +40,8 @@ jobs:
       run: |
         $devenv = & vswhere.exe '-property' productPath
         & $devenv "${{env.SOLUTION_FILE_PATH}}" /Upgrade /NoSplash
-      
+        & $devenv "${{env.PROJECT_FILE_PATH}}" /Upgrade /NoSplash
+
       #run:
       #  FOR /F "tokens=* USEBACKQ" %%F IN (`vswhere.exe -property productPath`) DO (
       #    SET devenvExe=%%F
