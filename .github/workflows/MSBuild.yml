@@ -29,13 +29,17 @@ jobs:
       #run: devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
       #run: vswhere -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe
       # we have vswhere, so try using vsdevcmd.bat to add devenv to the path:
-      run:
-        for /f "usebackq tokens=*" %%i in (`vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
-          set InstallDir=%%i
-          "%InstallDir%\Common7\Tools\vsdevcmd.bat" %*
-          devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
-        )        
+      #run:
+      #  for /f "usebackq tokens=*" %%i in (`vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
+      #    set InstallDir=%%i
+      #    "%InstallDir%\Common7\Tools\vsdevcmd.bat" %*
+      #    devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
+      #  )        
   
+      run: |
+        $devenv = & vswhere.exe '-property' productPath
+        & $devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
+
       shell: cmd
 
     - name: Build
