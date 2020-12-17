@@ -4,6 +4,7 @@ on: [push]
 
 env:
   # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: ./build/msvc/portaudio.sln
   VCPROJ_FILE_PATH: ./build/msvc/portaudio.vcproj
   VCXPROJ_FILE_PATH: ./build/msvc/portaudio.vcxproj
   VCXPROJ_FILTERS_FILE_PATH: ./build/msvc/portaudio.vcxproj.filters
@@ -42,7 +43,7 @@ jobs:
       run: |
         $devenv = & vswhere.exe '-property' productPath
         Write-Output "$devenv"
-        & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash
+        & $devenv "${{env.SOLUTION_FILE_PATH}}" /Upgrade /NoSplash
         Write-Output "devenv launched"
         while (!(Test-Path "${{env.VCXPROJ_FILE_PATH}}")) { Start-Sleep 10 }
         Write-Output "vcxproj found"
