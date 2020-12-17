@@ -40,6 +40,8 @@ jobs:
       run: |
         $devenv = & vswhere.exe '-property' productPath
         & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash /Out "${{env.VCXPROJ_FILE_PATH}}"
+        while (!(Test-Path "${{env.VCXPROJ_FILE_PATH}}")) { Start-Sleep 10 }
+        Start-Sleep -Seconds 10
 
       #run:
       #  FOR /F "tokens=* USEBACKQ" %%F IN (`vswhere.exe -property productPath`) DO (
