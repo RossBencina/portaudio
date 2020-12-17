@@ -43,13 +43,14 @@ jobs:
       run: |
         $devenv = & vswhere.exe '-property' productPath
         Write-Output "$devenv"
-        & $devenv "${{env.SOLUTION_FILE_PATH}}" /Upgrade /NoSplash
+        & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash
         Write-Output "devenv launched"
         while (!(Test-Path "${{env.VCXPROJ_FILE_PATH}}")) { Start-Sleep 10 }
         Write-Output "vcxproj found"
         while (!(Test-Path "${{env.VCXPROJ_FILTERS_FILE_PATH}}")) { Start-Sleep 10 }
         Write-Output "vcxproj.filters found"
         Start-Sleep -Seconds 10
+        Write-Output "done."
 
       #run:
       #  FOR /F "tokens=* USEBACKQ" %%F IN (`vswhere.exe -property productPath`) DO (
@@ -57,6 +58,14 @@ jobs:
       #  )
       #  "%devenvExe%" ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
       #shell: cmd
+
+    - name: Remove ASIO Files
+      run: |
+        $xdoc = new-object System.Xml.XmlDocument
+        $file = resolve-path("${{env.VCXPROJ_FILE_PATH}}")))
+        $xdoc.load($file)
+        $nodes = $xdoc.SelectNodes("ClCompile[@Include]")
+        Write-Output $nodes
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
