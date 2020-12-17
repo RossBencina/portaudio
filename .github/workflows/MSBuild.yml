@@ -36,10 +36,16 @@ jobs:
       #    devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
       #  )        
   
+      #run:
+      #  $devenv = & vswhere.exe '-property' productPath
+      #  $devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
+      
       run:
-        $devenv = & vswhere.exe '-property' productPath
-        $devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
-
+        FOR /F "tokens=* USEBACKQ" %%F IN (`vswhere.exe -property productPath`) DO (
+          SET devenvExe=%%F
+        )
+        "%devenvExe%" ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
+      
       shell: cmd
 
     - name: Build
