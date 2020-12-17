@@ -6,6 +6,8 @@ env:
   # Path to the solution file relative to the root of the project.
   VCPROJ_FILE_PATH: ./build/msvc/portaudio.vcproj
   VCXPROJ_FILE_PATH: ./build/msvc/portaudio.vcxproj
+  VCXPROJ_FILTERS_FILE_PATH: ./build/msvc/portaudio.vcxproj.filters
+  VCXPROJ_USER_FILE_PATH: ./build/msvc/portaudio.vcxproj.user
 
   # Configuration type to build.
   # You can convert this to a build matrix if you need coverage of multiple configuration types.
@@ -41,6 +43,8 @@ jobs:
         $devenv = & vswhere.exe '-property' productPath
         & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash
         while (!(Test-Path "${{env.VCXPROJ_FILE_PATH}}")) { Start-Sleep 10 }
+        while (!(Test-Path "${{env.VCXPROJ_FILTERS_FILE_PATH}}")) { Start-Sleep 10 }
+        while (!(Test-Path "${{env.VCXPROJ_USER_FILE_PATH}}")) { Start-Sleep 10 }
         Start-Sleep -Seconds 10
 
       #run:
