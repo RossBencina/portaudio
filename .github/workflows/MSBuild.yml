@@ -37,9 +37,9 @@ jobs:
         Write-Output "$devenv"
         & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash | Out-Null
         Write-Output "devenv launched"
-        while (!(Test-Path "${{env.VCXPROJ_FILE_PATH}}")) { Start-Sleep 10 }
+        while (!(Test-Path "${{env.VCXPROJ_FILE_PATH}}")) { Start-Sleep -Seconds 10 }
         Write-Output "vcxproj found"
-        while (!(Test-Path "${{env.VCXPROJ_FILTERS_FILE_PATH}}")) { Start-Sleep 10 }
+        while (!(Test-Path "${{env.VCXPROJ_FILTERS_FILE_PATH}}")) { Start-Sleep -Seconds 10 }
         Write-Output "vcxproj.filters found"
         Start-Sleep -Seconds 10
         Write-Output "done."
