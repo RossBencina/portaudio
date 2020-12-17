@@ -62,10 +62,11 @@ jobs:
     - name: Remove ASIO Files
       run: |
         $xdoc = new-object System.Xml.XmlDocument
-        $file = resolve-path("${{env.VCXPROJ_FILE_PATH}}")))
+        $file = resolve-path("${{env.VCXPROJ_FILE_PATH}}")
         $xdoc.load($file)
-        $nodes = $xdoc.SelectNodes("ClCompile[@Include]")
+        $nodes = $xdoc.SelectNodes("//ClCompile[contains(@Include, 'hostapi/asio')]")
         Write-Output $nodes
+        $xdoc.save($file)
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
