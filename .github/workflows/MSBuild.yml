@@ -36,9 +36,9 @@ jobs:
       #    devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
       #  )        
   
-      run: |
+      run:
         $devenv = & vswhere.exe '-property' productPath
-        & $devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
+        $devenv ${{env.SOLUTION_FILE_PATH}} /Upgrade /NoSplash
 
       shell: cmd
 
