@@ -4,8 +4,8 @@ on: [push]
 
 env:
   # Path to the solution file relative to the root of the project.
-  SOLUTION_FILE_PATH: ./build/msvc/portaudio.sln
   VCPROJ_FILE_PATH: ./build/msvc/portaudio.vcproj
+  VCPROJX_FILE_PATH: ./build/msvc/portaudio.vcprojx
 
   # Configuration type to build.
   # You can convert this to a build matrix if you need coverage of multiple configuration types.
@@ -39,8 +39,7 @@ jobs:
   
       run: |
         $devenv = & vswhere.exe '-property' productPath
-        & $devenv "${{env.SOLUTION_FILE_PATH}}" /Upgrade /NoSplash
-        & $devenv "${{env.PROJECT_FILE_PATH}}" /Upgrade /NoSplash
+        & $devenv "${{env.VCPROJ_FILE_PATH}}" /Upgrade /NoSplash /Out "${{env.VCPROJX_FILE_PATH}}"
 
       #run:
       #  FOR /F "tokens=* USEBACKQ" %%F IN (`vswhere.exe -property productPath`) DO (
@@ -53,4 +52,4 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.VCPROJX_FILE_PATH}}
