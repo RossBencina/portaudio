@@ -59,6 +59,12 @@ jobs:
           $parent = $node.ParentNode
           $parent.RemoveChild($node)
         }
+        # Enable DirectSound host API
+        $nodes = $xdoc.SelectNodes("//vs:PreprocessorDefinitions[contains(., 'PA_USE_DS=0')]", $namespace)
+        ForEach($node in $nodes) {
+          $text = $node.InnerText
+          $node.InnerText = $text -replace 'PA_USE_DS=0', 'PA_USE_DS=1'
+        }
         $xdoc.save($vcxprojFile)
         # Process .vcxproj.filters file: remove source files and includes
         $vcxprojFiltersFile = resolve-path("${{env.VCXPROJ_FILTERS_FILE_PATH}}")
