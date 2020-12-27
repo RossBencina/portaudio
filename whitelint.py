@@ -99,4 +99,4 @@ print("SUMMARY")
 print("=======")
 for s in statusSummary:
     if s.isBad():
-        print(str(s.path) + " (" + s.issueSummary() + ")")
+        print("error: " + str(s.path) + " (" + s.issueSummary() + ")")
