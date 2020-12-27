@@ -8,14 +8,16 @@ verbose = False
 #   - no tabs in c, h, cpp files
 #   - leading whitespace is a multiple of 4
 #   - no trailing whitespace
+#   - no non-ASCII or weird control characters
 
 class Status:
-    def __init__(self, path, hasInconsistentLineEndings=False, hasTabs=False, hasBadIndenting=False, hasTrailingWhitespace=False):
+    def __init__(self, path, hasInconsistentLineEndings=False, hasTabs=False, hasBadIndenting=False, hasTrailingWhitespace=False, hasBadCharacter=False):
         self.path = path
         self.hasInconsistentLineEndings = hasInconsistentLineEndings
         self.hasTabs = hasTabs
         self.hasBadIndenting = hasBadIndenting
         self.hasTrailingWhitespace = hasTrailingWhitespace
+        self.hasBadCharacter = hasBadCharacter
 
     def isBad(self):
         return len(self.issueSummary()) > 0
@@ -30,6 +32,8 @@ class Status:
             result += ["has-bad-indenting"]
         if self.hasTrailingWhitespace:
             result += ["has-trailing-whitespace"]
+        if self.hasBadCharacter:
+            result += ["has-bad-character"]
         return str.join(", ", result)
 
 statusSummary = []
@@ -94,6 +98,24 @@ for ext in filetypes:
                     print("error: " + str(path) + "(" + str(lineNo) + ")" + " trailing whitespace: ")
                     print(line)
             lineNo += 1
+
+        # 5. non-ASCII or weird control characters
+        badCharactersRe = re.compile(b'[^\t\r\n\x20-\x7E]+')
+        lines = data.split(b'\n') # relies on normalization above
+        lineNo = 1
+        for line in lines:
+            m = badCharactersRe.search(line)
+            if m:
+                bad = m.end() - m.start()
+                if bad > 0:
+                    status.hasBadCharacter = True
+                    if verbose:
+                        print("error: " + str(path) + "(" + str(lineNo) + ")" + " bad character: ")
+                        print(line)
+            lineNo += 1
+
+
+
 
 print("SUMMARY")
 print("=======")
