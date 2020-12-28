@@ -9,15 +9,17 @@ verbose = False
 #   - leading whitespace is a multiple of 4
 #   - no trailing whitespace
 #   - no non-ASCII or weird control characters
+#   - end of line at end of file
 
 class Status:
-    def __init__(self, path, hasInconsistentLineEndings=False, hasTabs=False, hasBadIndenting=False, hasTrailingWhitespace=False, hasBadCharacter=False):
+    def __init__(self, path, hasInconsistentLineEndings=False, hasTabs=False, hasBadIndenting=False, hasTrailingWhitespace=False, hasBadCharacter=False, hasNoEolAtEof=False):
         self.path = path
         self.hasInconsistentLineEndings = hasInconsistentLineEndings
         self.hasTabs = hasTabs
         self.hasBadIndenting = hasBadIndenting
         self.hasTrailingWhitespace = hasTrailingWhitespace
         self.hasBadCharacter = hasBadCharacter
+        self.hasNoEolAtEof = hasNoEolAtEof
 
     def isBad(self):
         return len(self.issueSummary()) > 0
@@ -34,6 +36,8 @@ class Status:
             result += ["has-trailing-whitespace"]
         if self.hasBadCharacter:
             result += ["has-bad-character"]
+        if self.hasNoEolAtEof:
+            result += ["has-no-eol-at-eof"]
         return str.join(", ", result)
 
 statusSummary = []
@@ -114,7 +118,13 @@ for ext in filetypes:
                         print(line)
             lineNo += 1
 
-
+        # 6. check for EOL at EOF
+        if len(data) > 0:
+            lastChar = data[-1]
+            if lastChar != b'\n':
+                status.hasNoEolAtEof = True
+                if verbose:
+                    print("error: " + str(path) + " no end-of-line at end-of-file")
 
 
 print("SUMMARY")
