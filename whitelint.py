@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+import sys
 
 verbose = False
 
@@ -129,6 +130,13 @@ for ext in filetypes:
 
 print("SUMMARY")
 print("=======")
+badness = False
 for s in statusSummary:
     if s.isBad():
+        badness = True
         print("error: " + str(s.path) + " (" + s.issueSummary() + ")")
+
+if badness:
+    sys.exit(1)
+else:
+    sys.exit(0)
