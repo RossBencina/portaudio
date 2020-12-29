@@ -3,6 +3,8 @@ import re
 import sys
 
 verbose = False
+checkBadIndenting = True
+verboseBadIndenting = True
 
 # Check the following:
 #   - consistent line endings throughout file
@@ -41,6 +43,45 @@ class Status:
             result += ["has-no-eol-at-eof"]
         return str.join(", ", result)
 
+def multilineCommentIsOpen(lineText, wasOpen):
+    isOpen = wasOpen
+    index = 0
+    end = len(lineText)
+    while index != -1 and index < end:
+        if isOpen:
+            index = lineText.find(b'*/', index)
+            if index != -1:
+                isOpen = False
+                index += 2
+        else:
+            index = lineText.find(b'/*', index)
+            if index != -1:
+                isOpen = True
+                index += 2
+    return isOpen
+
+# A line allows an unusual indent to follow if it is the beginning of a
+# multi-line function parameter list, or an element of a function parameter list.
+def allowsStrangeIndentOnFollowingLine(lineText):
+    s = lineText.strip(b' ')
+    if len(s) == 0:
+        return False
+
+    if s.rfind(b'*/') == (len(s) - 2): # line has a trailing comment, strip it
+        commentStart = s.rfind(b'/*')
+        if commentStart != -1:
+            s = s[:commentStart].strip(b' ')
+            if len(s) == 0:
+                return False
+
+        if len(s) == 0:
+            return False
+
+    if s[-1] == b'('[0] or s[-1] == b','[0]: # program text is trailing '(' or ','
+        return True
+    return False
+
+
 statusSummary = []
 
 filetypes = ["*.c", "*.h", "*.cpp"]
@@ -78,17 +119,34 @@ for ext in filetypes:
 
             data = data.replace(b'\t', b'    ') # normalize tabs to 4 spaces
 
-        # 3. leading whitespace
-        # leadingWhitespaceRe = re.compile(b'^\s*')
-        # lines = data.split(b'\n') # relies on normalization above
-        # for line in lines:
-        #     m = leadingWhitespaceRe.search(line)
-        #     indent = m.end() - m.start()
-        #     if indent % 4 is not 0:
-        #         status.hasBadIndenting = True
-        #         if verbose:
-        #             print("error: " + str(path) + bad indent: " + str(indent))
-        #             print(line)
+        # 3. leading whitespace / bad indenting
+        if checkBadIndenting:
+            leadingWhitespaceRe = re.compile(b'^\s*')
+            lines = data.split(b'\n') # relies on normalization above
+            commentIsOpen = False
+            previousLine = b''
+            previousIndent = 0
+            lineNo = 1
+            for line in lines:
+                if commentIsOpen:
+                    # don't check leading whitespace inside comments
+                    commentIsOpen = multilineCommentIsOpen(line, commentIsOpen)
+                    previousIndent = 0
+                else:
+                    m = leadingWhitespaceRe.search(line)
+                    indent = m.end() - m.start()
+                    if indent != len(line): # ignore whitespace lines, they are considered trailing whitespace
+                        if indent % 4 is not 0 and indent != previousIndent: # potential bad indents are not multiples of 4, and are not indented the same as the previous line
+                            s = previousLine
+                            if not allowsStrangeIndentOnFollowingLine(previousLine):
+                                status.hasBadIndenting = True
+                                if verbose or verboseBadIndenting:
+                                    print("error: " + str(path) + "(" + str(lineNo) + ")" + " bad indent: " + str(indent))
+                                    print(line)
+                    commentIsOpen = multilineCommentIsOpen(line, commentIsOpen)
+                    previousIndent = indent
+                previousLine = line
+                lineNo += 1
 
         # 4. trailing whitespace
         trailingWhitespaceRe = re.compile(b'\s*$')
