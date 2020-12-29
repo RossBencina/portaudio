@@ -77,7 +77,8 @@ def allowsStrangeIndentOnFollowingLine(lineText):
         if len(s) == 0:
             return False
 
-    if s[-1] == b'('[0] or s[-1] == b','[0]: # program text is trailing '(' or ','
+    okChars = b'(,+-/*='
+    if s[-1] in okChars: # program text is trailing '(' or ',' etc.
         return True
     return False
 
@@ -180,7 +181,7 @@ for ext in filetypes:
         # 6. check for EOL at EOF
         if len(data) > 0:
             lastChar = data[-1]
-            if lastChar != b'\n':
+            if lastChar != b'\n'[0]:
                 status.hasNoEolAtEof = True
                 if verbose:
                     print("error: " + str(path) + " no end-of-line at end-of-file")
