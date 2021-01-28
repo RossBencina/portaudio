@@ -77,7 +77,7 @@ def allowsStrangeIndentOnFollowingLine(lineText):
         if len(s) == 0:
             return False
 
-    okChars = b'(,+-/*=&|:?"'
+    okChars = b'(,\\+-/*=&|?:"'
     if s[-1] in okChars: # program text is trailing '(' or ',' etc.
         return True
     return False
