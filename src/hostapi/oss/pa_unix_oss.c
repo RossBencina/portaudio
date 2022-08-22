@@ -104,7 +104,7 @@ static pthread_t mainThread_;
                 PaUtil_SetLastHostErrorInfo( paOSS, sysErr_, strerror( errno ) ); \
             } \
             \
-            PaUtil_DebugPrint(( "Expression '" #expr "' failed in '" __FILE__ "', line: " STRINGIZE( __LINE__ ) "\n" )); \
+            PaUtil_DebugPrint(( "Expression '" #expr "' failed in '" __FILE__ "', line: " PA_STRINGIZE( __LINE__ ) "\n" )); \
             result = (code); \
             goto error; \
         } \
@@ -243,7 +243,7 @@ PaError PaOSS_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex 
     PaError result = paNoError;
     PaOSSHostApiRepresentation *ossHostApi = NULL;
 
-    PA_UNLESS( ossHostApi = (PaOSSHostApiRepresentation*)PaUtil_AllocateMemory( sizeof(PaOSSHostApiRepresentation) ),
+    PA_UNLESS( ossHostApi = (PaOSSHostApiRepresentation*)PaUtil_AllocateZeroInitializedMemory( sizeof(PaOSSHostApiRepresentation) ),
             paInsufficientMemory );
     PA_UNLESS( ossHostApi->allocations = PaUtil_CreateAllocationGroup(), paInsufficientMemory );
     ossHostApi->hostApiIndex = hostApiIndex;
@@ -299,7 +299,7 @@ PaError PaUtil_InitializeDeviceInfo( PaDeviceInfo *deviceInfo, const char *name,
     if( allocations )
     {
         size_t len = strlen( name ) + 1;
-        PA_UNLESS( deviceInfo->name = PaUtil_GroupAllocateMemory( allocations, len ), paInsufficientMemory );
+        PA_UNLESS( deviceInfo->name = PaUtil_GroupAllocateZeroInitializedMemory( allocations, len ), paInsufficientMemory );
         strncpy( (char *)deviceInfo->name, name, len );
     }
     else
@@ -502,7 +502,7 @@ static PaError QueryDevice( char *deviceName, PaOSSHostApiRepresentation *ossApi
         goto error;
     }
 
-    PA_UNLESS( *deviceInfo = PaUtil_GroupAllocateMemory( ossApi->allocations, sizeof (PaDeviceInfo) ), paInsufficientMemory );
+    PA_UNLESS( *deviceInfo = PaUtil_GroupAllocateZeroInitializedMemory( ossApi->allocations, sizeof (PaDeviceInfo) ), paInsufficientMemory );
     PA_ENSURE( PaUtil_InitializeDeviceInfo( *deviceInfo, deviceName, ossApi->hostApiIndex, maxInputChannels, maxOutputChannels,
                 defaultLowInputLatency, defaultLowOutputLatency, defaultHighInputLatency, defaultHighOutputLatency, sampleRate,
                 ossApi->allocations ) );
@@ -577,7 +577,7 @@ static PaError BuildDeviceList( PaOSSHostApiRepresentation *ossApi )
 
     PA_DEBUG(("PaOSS %s: Total number of devices found: %d\n", __FUNCTION__, numDevices));
 
-    commonApi->deviceInfos = (PaDeviceInfo**)PaUtil_GroupAllocateMemory(
+    commonApi->deviceInfos = (PaDeviceInfo**)PaUtil_GroupAllocateZeroInitializedMemory(
         ossApi->allocations, sizeof(PaDeviceInfo*) * numDevices );
     memcpy( commonApi->deviceInfos, deviceInfos, numDevices * sizeof (PaDeviceInfo *) );
 
@@ -761,7 +761,7 @@ static PaError PaOssStreamComponent_Initialize( PaOssStreamComponent *component,
     if( !callbackMode && !component->userInterleaved )
     {
         /* Pre-allocate non-interleaved user provided buffers */
-        PA_UNLESS( component->userBuffers = PaUtil_AllocateMemory( sizeof (void *) * component->userChannelCount ),
+        PA_UNLESS( component->userBuffers = PaUtil_AllocateZeroInitializedMemory( sizeof (void *) * component->userChannelCount ),
                 paInsufficientMemory );
     }
 
@@ -877,12 +877,12 @@ static PaError PaOssStream_Initialize( PaOssStream *stream, const PaStreamParame
     PA_ENSURE( OpenDevices( idevName, odevName, &idev, &odev ) );
     if( inputParameters )
     {
-        PA_UNLESS( stream->capture = PaUtil_AllocateMemory( sizeof (PaOssStreamComponent) ), paInsufficientMemory );
+        PA_UNLESS( stream->capture = PaUtil_AllocateZeroInitializedMemory( sizeof (PaOssStreamComponent) ), paInsufficientMemory );
         PA_ENSURE( PaOssStreamComponent_Initialize( stream->capture, inputParameters, callback != NULL, idev, idevName ) );
     }
     if( outputParameters )
     {
-        PA_UNLESS( stream->playback = PaUtil_AllocateMemory( sizeof (PaOssStreamComponent) ), paInsufficientMemory );
+        PA_UNLESS( stream->playback = PaUtil_AllocateZeroInitializedMemory( sizeof (PaOssStreamComponent) ), paInsufficientMemory );
         PA_ENSURE( PaOssStreamComponent_Initialize( stream->playback, outputParameters, callback != NULL, odev, odevName ) );
     }
 
@@ -937,6 +937,11 @@ static PaError Pa2OssFormat( PaSampleFormat paFormat, int *ossFormat )
         case paInt16:
             *ossFormat = AFMT_S16_NE;
             break;
+#ifdef AFMT_S32_NE
+        case paInt32:
+            *ossFormat = AFMT_S32_NE;
+            break;
+#endif
         default:
             return paInternalError;     /* This shouldn't happen */
     }
@@ -960,6 +965,10 @@ static PaError GetAvailableFormats( PaOssStreamComponent *component, PaSampleFor
         frmts |= paInt8;
     if( mask & AFMT_S16_NE )
         frmts |= paInt16;
+#ifdef AFMT_S32_NE
+    if( mask & AFMT_S32_NE )
+        frmts |= paInt32;
+#endif
     if( frmts == 0 )
         result = paSampleFormatNotSupported;
 
@@ -1075,7 +1084,7 @@ static PaError PaOssStreamComponent_Configure( PaOssStreamComponent *component, 
         component->numBufs = master->numBufs;
     }
 
-    PA_UNLESS( component->buffer = PaUtil_AllocateMemory( PaOssStreamComponent_BufferSize( component ) ),
+    PA_UNLESS( component->buffer = PaUtil_AllocateZeroInitializedMemory( PaOssStreamComponent_BufferSize( component ) ),
             paInsufficientMemory );
 
 error:
@@ -1244,7 +1253,7 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
     }
 
     /* allocate and do basic initialization of the stream structure */
-    PA_UNLESS( stream = (PaOssStream*)PaUtil_AllocateMemory( sizeof(PaOssStream) ), paInsufficientMemory );
+    PA_UNLESS( stream = (PaOssStream*)PaUtil_AllocateZeroInitializedMemory( sizeof(PaOssStream) ), paInsufficientMemory );
     PA_ENSURE( PaOssStream_Initialize( stream, inputParameters, outputParameters, streamCallback, userData, streamFlags, ossHostApi ) );
 
     PA_ENSURE( PaOssStream_Configure( stream, sampleRate, framesPerBuffer, &inLatency, &outLatency ) );
@@ -2041,4 +2050,3 @@ error:
     return result;
 #endif
 }
-

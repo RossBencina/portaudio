@@ -63,6 +63,7 @@ PaError PaWinDs_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiInde
 PaError PaAsio_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
 PaError PaWinWdm_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
 PaError PaWasapi_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
+PaError PaJack_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
 
 #ifdef __cplusplus
 }
@@ -92,11 +93,13 @@ PaUtilHostApiInitializer *paHostApiInitializers[] =
         PaWinWdm_Initialize,
 #endif
 
+#if PA_USE_JACK
+        PaJack_Initialize,
+#endif
+
 #if PA_USE_SKELETON
         PaSkeleton_Initialize, /* just for testing. last in list so it isn't marked as default. */
 #endif
 
         0   /* NULL terminated array */
     };
-
-
