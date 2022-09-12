@@ -1,19 +1,34 @@
+# PortAudio Repository Whitespace Linter
+#
+# Check all source files for the following:
+#   1. Consistent line endings are used throughout each file.
+#   2. No tabs are present. Use spaces for indenting.
+#   3. Indenting: leading whitespace is usually a multiple of 4 spaces,
+#      with permissive exceptions for continuation lines.
+#   4. Lines have no trailing whitespace.
+#   5. No non-ASCII or weird control characters are present.
+#   6. End-of-line is present at end-of-file.
+
 from pathlib import Path
 import re
 import sys
+
+# Configuration:
+
+# Check these file types:
+sourceFileTypes = ["*.c", "*.h", "*.cpp", "*.cxx", "*.hxx"]
+
+# Scan these directories
+dirs = ["src", "include", "examples", "test", "qa"]
+
+# Exclude files or directories with the following names:
+excludePathParts = ["ASIOSDK", "iasiothiscallresolver.cpp", "iasiothiscallresolver.h", "mingw-include"]
 
 verbose = True
 checkBadIndenting = True
 verboseBadIndenting = True
 
-# Check the following:
-#   1. consistent line endings throughout file
-#   2. no tabs in c, h, cpp files
-#   3. indenting: leading whitespace is usually a multiple of 4 spaces,
-#      with permissive exceptions for continuation lines.
-#   4. no trailing whitespace
-#   5. no non-ASCII or weird control characters
-#   6. end of line is present at end of file
+# (End configuration)
 
 
 class FileStatus:
@@ -99,19 +114,13 @@ def allowStrangeIndentOfLine(lineText):
     return False
 
 
-statusSummary = []
+# Run the checks over all files specified by [sourceFileTypes, dirs, excludePathParts]:
 
-filetypes = ["*.c", "*.h", "*.cpp", "*.cxx", "*.hxx"]
-dirs = ["src", "include", "examples", "test", "qa"] # bindings, pablio
+statusSummary = []
 for dir in dirs:
-    for ext in filetypes:
+    for ext in sourceFileTypes:
         for path in Path(dir).rglob(ext):
-            if (
-                "ASIOSDK" in path.parts
-                or "iasiothiscallresolver.cpp" in path.parts
-                or "iasiothiscallresolver.h" in path.parts
-                or "mingw-include" in path.parts
-            ):
+            if any(part in path.parts for part in excludePathParts):
                 continue
 
             # for testing, uncomment the following lines and select a specific path:
