@@ -13,12 +13,11 @@ verboseBadIndenting = True
 #      with permissive exceptions for continuation lines.
 #   4. no trailing whitespace
 #   5. no non-ASCII or weird control characters
-#   6. end of line at end of file
+#   6. end of line is present at end of file
 
 
-# For each file, store issue counts for each type of issue
 class FileStatus:
-
+    """Issue status for a particular file. Stores issue counts for each type of issue."""
     def __init__(self, path):
         self.path = path
         issueNames = [
@@ -60,10 +59,12 @@ def multilineCommentIsOpenAtEol(lineText, wasOpenAtStartOfLine):
     return isOpen
 
 
-# A line allows an unusual indent to follow if it is the beginning of a
-# multi-line function parameter list, an element of a function parameter list,
-# or the middle of an expression (binary operator, etc.)
 def allowStrangeIndentOnFollowingLine(lineText):
+    """Compute whether a non-standard indent is allowed on the following line.
+    A line allows an unusual indent to follow if it is the beginning of a
+    multi-line function parameter list, an element of a function parameter list,
+    or an incomplete expression (binary operator, etc.).
+    """
     s = lineText.strip(b" ")
     if len(s) == 0:
         return False
@@ -83,8 +84,11 @@ def allowStrangeIndentOnFollowingLine(lineText):
     return False
 
 
-# Allow continuation lines to have strange indents
 def allowStrangeIndentOfLine(lineText):
+    """Compute whether a non-standard indent is allowed on the line.
+    A line is allowed an unusual indent if it is the continuation of an
+    incomplete expression (binary operator, etc.).
+    """
     s = lineText.strip(b" ")
     if len(s) == 0:
         return False
@@ -171,7 +175,9 @@ for dir in dirs:
                         m = leadingWhitespaceRe.search(line)
                         indent = m.end() - m.start()
                         if indent != len(line): # ignore whitespace lines, they are considered trailing whitespace
-                            if indent % 4 is not 0 and indent != previousIndent: # potential bad indents are not multiples of 4, and are not indented the same as the previous line
+                            if indent % 4 is not 0 and indent != previousIndent:
+                                # potential bad indents are not multiples of 4,
+                                # and are not indented the same as the previous line
                                 s = previousLine
                                 if not allowStrangeIndentOnFollowingLine(previousLine) and not allowStrangeIndentOfLine(line):
                                     status.incrementIssueCount("has-bad-indenting")
@@ -210,7 +216,7 @@ for dir in dirs:
                             print(line)
                 lineNo += 1
 
-            # 6. check for EOL at EOF
+            # 6. require EOL at EOF
             if len(data) > 0:
                 lastChar = data[-1]
                 if lastChar != b"\n"[0]:
