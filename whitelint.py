@@ -7,70 +7,70 @@ checkBadIndenting = True
 verboseBadIndenting = True
 
 # Check the following:
-#   - consistent line endings throughout file
-#   - no tabs in c, h, cpp files
-#   - leading whitespace is a multiple of 4
-#   - no trailing whitespace
-#   - no non-ASCII or weird control characters
-#   - end of line at end of file
+#   1. consistent line endings throughout file
+#   2. no tabs in c, h, cpp files
+#   3. indenting: leading whitespace is usually a multiple of 4 spaces,
+#      with permissive exceptions for continuation lines.
+#   4. no trailing whitespace
+#   5. no non-ASCII or weird control characters
+#   6. end of line at end of file
 
-class Status:
-    def __init__(self, path, hasInconsistentLineEndings=False, hasTabs=False, hasBadIndenting=False, hasTrailingWhitespace=False, hasBadCharacter=False, hasNoEolAtEof=False):
+
+# For each file, store issue counts for each type of issue
+class FileStatus:
+
+    def __init__(self, path):
         self.path = path
-        self.hasInconsistentLineEndings = hasInconsistentLineEndings
-        self.hasTabs = hasTabs
-        self.hasBadIndenting = hasBadIndenting
-        self.hasTrailingWhitespace = hasTrailingWhitespace
-        self.hasBadCharacter = hasBadCharacter
-        self.hasNoEolAtEof = hasNoEolAtEof
+        issueNames = [
+            "has-inconsistent-line-endings",
+            "has-tabs",
+            "has-bad-indenting",
+            "has-trailing-whitespace",
+            "has-bad-character",
+            "has-no-eol-at-eof",
+        ]
+        self.issueCounts = dict.fromkeys(issueNames, 0)
 
-    def isBad(self):
-        return len(self.issueSummary()) > 0
+    def incrementIssueCount(self, issueName):
+        assert issueName in self.issueCounts # catch typos in issueName
+        self.issueCounts[issueName] += 1
 
-    def issueSummary(self):
-        result = []
-        if self.hasInconsistentLineEndings:
-            result += ["has-inconsistent-line-endings"]
-        if self.hasTabs:
-            result += ["has-tabs"]
-        if self.hasBadIndenting:
-            result += ["has-bad-indenting"]
-        if self.hasTrailingWhitespace:
-            result += ["has-trailing-whitespace"]
-        if self.hasBadCharacter:
-            result += ["has-bad-character"]
-        if self.hasNoEolAtEof:
-            result += ["has-no-eol-at-eof"]
-        return str.join(", ", result)
+    def issueSummaryString(self):
+        return str.join(", ", [name for name in self.issueCounts if self.issueCounts[name] > 0])
 
-def multilineCommentIsOpen(lineText, wasOpen):
-    isOpen = wasOpen
+    def hasIssues(self):
+        return any(count > 0 for count in self.issueCounts.values())
+
+
+def multilineCommentIsOpenAtEol(lineText, wasOpenAtStartOfLine):
+    isOpen = wasOpenAtStartOfLine
     index = 0
     end = len(lineText)
     while index != -1 and index < end:
         if isOpen:
-            index = lineText.find(b'*/', index)
+            index = lineText.find(b"*/", index)
             if index != -1:
                 isOpen = False
                 index += 2
         else:
-            index = lineText.find(b'/*', index)
+            index = lineText.find(b"/*", index)
             if index != -1:
                 isOpen = True
                 index += 2
     return isOpen
 
+
 # A line allows an unusual indent to follow if it is the beginning of a
-# multi-line function parameter list, or an element of a function parameter list.
-def allowsStrangeIndentOnFollowingLine(lineText):
-    s = lineText.strip(b' ')
+# multi-line function parameter list, an element of a function parameter list,
+# or the middle of an expression (binary operator, etc.)
+def allowStrangeIndentOnFollowingLine(lineText):
+    s = lineText.strip(b" ")
     if len(s) == 0:
         return False
-
-    if s.rfind(b'*/') == (len(s) - 2): # line has a trailing comment, strip it
-        commentStart = s.rfind(b'/*')
+    if s.rfind(b"*/") == (len(s) - 2):  # line has a trailing comment, strip it
+        commentStart = s.rfind(b"/*")
         if commentStart != -1:
-            s = s[:commentStart].strip(b' ')
+            s = s[:commentStart].strip(b" ")
             if len(s) == 0:
                 return False
 
@@ -78,13 +78,14 @@ def allowsStrangeIndentOnFollowingLine(lineText):
             return False
 
     okChars = b'(,\\+-/*=&|?:"'
-    if s[-1] in okChars: # program text is trailing '(' or ',' etc.
+    if s[-1] in okChars: # non-comment program text has trailing okChar: '(' or ',' etc.
         return True
     return False
 
-# allow continuation lines to have strange indents
+
+# Allow continuation lines to have strange indents
 def allowStrangeIndentOfLine(lineText):
-    s = lineText.strip(b' ')
+    s = lineText.strip(b" ")
     if len(s) == 0:
         return False
 
@@ -93,6 +94,7 @@ def allowStrangeIndentOfLine(lineText):
         return True
     return False
 
+
 statusSummary = []
 
 filetypes = ["*.c", "*.h", "*.cpp", "*.cxx", "*.hxx"]
@@ -100,57 +102,70 @@ dirs = ["src", "include", "examples", "test", "qa"] # bindings, pablio
 for dir in dirs:
     for ext in filetypes:
         for path in Path(dir).rglob(ext):
-            if "ASIOSDK" in path.parts \
-                or "iasiothiscallresolver.cpp" in path.parts \
-                or "iasiothiscallresolver.h" in path.parts \
-                or "mingw-include" in path.parts:
+            if (
+                "ASIOSDK" in path.parts
+                or "iasiothiscallresolver.cpp" in path.parts
+                or "iasiothiscallresolver.h" in path.parts
+                or "mingw-include" in path.parts
+            ):
                 continue
 
-            # uncomment and select a specific path for testing:
+            # for testing, uncomment the following lines and select a specific path:
             #if not "qa" in path.parts:
             #    continue
 
             data = path.read_bytes()
 
-            status = Status(path)
+            status = FileStatus(path)
             statusSummary.append(status)
 
             # 1. Consistent line endings
-            # check for stray CR or LF, then convert CRLF to LF
-            assert(not b'\f' in data) # we'll use \f as a sentinel
-            if b'\r' in data and b'\n' in data:
-                d = data.replace(b'\r\n', b'\f')
-                if b'\r' in d:
-                    status.hasInconsistentLineEndings = True
+            # check and then normalize to \n line endings for the benefit of the rest of the program
+            if b"\r" in data and b"\n" in data:
+                # CRLF (Windows) case: check for stray CR or LF, then convert CRLF to LF
+                assert not b"\f" in data  # we'll use \f as a sentinel during conversion
+                d = data.replace(b"\r\n", b"\f")
+                if b"\r" in d:
+                    status.incrementIssueCount("has-inconsistent-line-endings")
                     if verbose:
-                        print("error: " + str(path) + " stray carriage return")
-                if b'\n' in d:
-                    status.hasInconsistentLineEndings = True
+                        print("error: {0} stray carriage return".format(path))
+                if b"\n" in d:
+                    status.incrementIssueCount("has-inconsistent-line-endings")
                     if verbose:
-                        print("error: " + str(path) + " stray newline")
+                        print("error: {0} stray newline".format(path))
+                data = d.replace(b"\f", b"\n")  # normalize line endings
+            elif b"\r" in data:
+                # CR (Classic Mac) case: convert CR to LF
+                data = d.replace(b"\r", b"\n")  # normalize line endings
+            else:
+                # LF (Unix) case: no change
+                pass
 
-                data = d.replace(b'\f', b'\n') # normalize line endings
+            lines = data.split(b"\n")  # relies on newline normalization above
 
             # 2. absence of tabs
-            if b'\t' in data:
-                status.hasTabs = True
-                if verbose:
-                    print("error: " + str(path) + " contains tab")
+            lineNo = 1
+            for line in lines:
+                if b"\t" in line:
+                    status.incrementIssueCount("has-tabs")
+                    if verbose:
+                        print("error: {0}({1}) contains tab".format(path, lineNo))
+                lineNo += 1
 
-                data = data.replace(b'\t', b'    ') # normalize tabs to 4 spaces
+            data = data.replace(b"\t", b"    ") # normalize tabs to 4 spaces for indent algorithm below
+            lines = data.split(b"\n") # recompute lines, relies on newline normalization above
 
             # 3. leading whitespace / bad indenting
             if checkBadIndenting:
-                leadingWhitespaceRe = re.compile(b'^\s*')
-                lines = data.split(b'\n') # relies on normalization above
+                leadingWhitespaceRe = re.compile(b"^\s*")
                 commentIsOpen = False
-                previousLine = b''
+                previousLine = b""
                 previousIndent = 0
                 lineNo = 1
                 for line in lines:
                     if commentIsOpen:
                         # don't check leading whitespace inside comments
-                        commentIsOpen = multilineCommentIsOpen(line, commentIsOpen)
+                        commentIsOpen = multilineCommentIsOpenAtEol(line, commentIsOpen)
                         previousIndent = 0
                     else:
                         m = leadingWhitespaceRe.search(line)
@@ -158,63 +173,62 @@ for dir in dirs:
                         if indent != len(line): # ignore whitespace lines, they are considered trailing whitespace
                             if indent % 4 is not 0 and indent != previousIndent: # potential bad indents are not multiples of 4, and are not indented the same as the previous line
                                 s = previousLine
-                                if not allowsStrangeIndentOnFollowingLine(previousLine) and not allowStrangeIndentOfLine(line):
-                                    status.hasBadIndenting = True
+                                if not allowStrangeIndentOnFollowingLine(previousLine) and not allowStrangeIndentOfLine(line):
+                                    status.incrementIssueCount("has-bad-indenting")
                                     if verbose or verboseBadIndenting:
-                                        print("error: " + str(path) + "(" + str(lineNo) + ")" + " bad indent: " + str(indent))
+                                        print("error: {0}({1}) bad indent: {2}".format(path, lineNo, indent))
                                         print(line)
-                        commentIsOpen = multilineCommentIsOpen(line, commentIsOpen)
+                        commentIsOpen = multilineCommentIsOpenAtEol(line, commentIsOpen)
                         previousIndent = indent
                     previousLine = line
                     lineNo += 1
 
             # 4. trailing whitespace
-            trailingWhitespaceRe = re.compile(b'\s*$')
-            lines = data.split(b'\n') # relies on normalization above
+            trailingWhitespaceRe = re.compile(b"\s*$")
             lineNo = 1
             for line in lines:
                 m = trailingWhitespaceRe.search(line)
                 trailing = m.end() - m.start()
                 if trailing > 0:
-                    status.hasTrailingWhitespace = True
+                    status.incrementIssueCount("has-trailing-whitespace")
                     if verbose:
-                        print("error: " + str(path) + "(" + str(lineNo) + ")" + " trailing whitespace: ")
+                        print("error: {0}({1}) trailing whitespace:".format(path, lineNo))
                         print(line)
                 lineNo += 1
 
             # 5. non-ASCII or weird control characters
-            badCharactersRe = re.compile(b'[^\t\r\n\x20-\x7E]+')
-            lines = data.split(b'\n') # relies on normalization above
+            badCharactersRe = re.compile(b"[^\t\r\n\x20-\x7E]+")
             lineNo = 1
             for line in lines:
                 m = badCharactersRe.search(line)
                 if m:
                     bad = m.end() - m.start()
                     if bad > 0:
-                        status.hasBadCharacter = True
+                        status.incrementIssueCount("has-bad-character")
                         if verbose:
-                            print("error: " + str(path) + "(" + str(lineNo) + ")" + " bad character: ")
+                            print("error: {0}({1}) bad character:".format(path, lineNo))
                             print(line)
                 lineNo += 1
 
             # 6. check for EOL at EOF
             if len(data) > 0:
                 lastChar = data[-1]
-                if lastChar != b'\n'[0]:
-                    status.hasNoEolAtEof = True
+                if lastChar != b"\n"[0]:
+                    status.incrementIssueCount("has-no-eol-at-eof")
                     if verbose:
-                        print("error: " + str(path) + " no end-of-line at end-of-file")
+                        lineNo = len(lines)
+                        print("error: {0}({1}) no end-of-line at end-of-file".format(path, lineNo))
 
 
 print("SUMMARY")
 print("=======")
-badness = False
+issuesFound = False
 for s in statusSummary:
-    if s.isBad():
-        badness = True
-        print("error: " + str(s.path) + " (" + s.issueSummary() + ")")
+    if s.hasIssues():
+        issuesFound = True
+        print("error: " + str(s.path) + " (" + s.issueSummaryString() + ")")
 
-if badness:
+if issuesFound:
     sys.exit(1)
 else:
     print("all good.")
