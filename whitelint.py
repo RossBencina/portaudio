@@ -8,6 +8,8 @@
 #   4. Lines have no trailing whitespace.
 #   5. No non-ASCII or weird control characters are present.
 #   6. End-of-line is present at end-of-file.
+#   7. No empty (or whitespace) lines at end-of-file.
+
 
 from pathlib import Path
 import re
@@ -41,7 +43,8 @@ class FileStatus:
             "has-bad-indenting",
             "has-trailing-whitespace",
             "has-bad-character",
-            "has-no-eol-at-eof",
+            "has-empty-line-at-end-of-file",
+            "has-no-eol-character-at-end-of-file",
         ]
         self.issueCounts = dict.fromkeys(issueNames, 0)
 
@@ -49,11 +52,14 @@ class FileStatus:
         assert issueName in self.issueCounts # catch typos in issueName
         self.issueCounts[issueName] += 1
 
-    def issueSummaryString(self):
-        return str.join(", ", [name for name in self.issueCounts if self.issueCounts[name] > 0])
+    def hasIssue(self, issueName):
+        return self.issueCounts[issueName] > 0
 
     def hasIssues(self):
         return any(count > 0 for count in self.issueCounts.values())
+
+    def issueSummaryString(self):
+        return str.join(", ", [name for name in self.issueCounts if self.issueCounts[name] > 0])
 
 
 def multilineCommentIsOpenAtEol(lineText, wasOpenAtStartOfLine):
@@ -123,7 +129,7 @@ for dir in dirs:
             if any(part in path.parts for part in excludePathParts):
                 continue
 
-            # for testing, uncomment the following lines and select a specific path:
+            # during development, uncomment the following 2 lines and select a specific path:
             #if not "qa" in path.parts:
             #    continue
 
@@ -131,6 +137,8 @@ for dir in dirs:
 
             status = FileStatus(path)
             statusSummary.append(status)
+
+            # Perform checks:
 
             # 1. Consistent line endings
             # check and then normalize to \n line endings for the benefit of the rest of the program
@@ -156,7 +164,7 @@ for dir in dirs:
 
             lines = data.split(b"\n")  # relies on newline normalization above
 
-            # 2. absence of tabs
+            # 2. Absence of tabs
             lineNo = 1
             for line in lines:
                 if b"\t" in line:
@@ -168,7 +176,7 @@ for dir in dirs:
             data = data.replace(b"\t", b"    ") # normalize tabs to 4 spaces for indent algorithm below
             lines = data.split(b"\n") # recompute lines, relies on newline normalization above
 
-            # 3. leading whitespace / bad indenting
+            # 3. Correct leading whitespace / bad indenting
             if checkBadIndenting:
                 leadingWhitespaceRe = re.compile(b"^\s*")
                 commentIsOpen = False
@@ -198,7 +206,7 @@ for dir in dirs:
                     previousLine = line
                     lineNo += 1
 
-            # 4. trailing whitespace
+            # 4. No trailing whitespace
             trailingWhitespaceRe = re.compile(b"\s*$")
             lineNo = 1
             for line in lines:
@@ -211,7 +219,7 @@ for dir in dirs:
                         print(line)
                 lineNo += 1
 
-            # 5. non-ASCII or weird control characters
+            # 5. No non-ASCII or weird control characters
             badCharactersRe = re.compile(b"[^\t\r\n\x20-\x7E]+")
             lineNo = 1
             for line in lines:
@@ -225,14 +233,42 @@ for dir in dirs:
                             print(line)
                 lineNo += 1
 
-            # 6. require EOL at EOF
-            if len(data) > 0:
+            # 6. Require EOL at EOF
+            if len(data) == 0:
+                status.incrementIssueCount("has-no-eol-character-at-end-of-file")
+                if verbose:
+                    lineNo = 1
+                    print("error: {0}({1}) no end-of-line at end-of-file (empty file)".format(path, lineNo))
+            else:
                 lastChar = data[-1]
                 if lastChar != b"\n"[0]:
-                    status.incrementIssueCount("has-no-eol-at-eof")
+                    status.incrementIssueCount("has-no-eol-character-at-end-of-file")
                     if verbose:
                         lineNo = len(lines)
                         print("error: {0}({1}) no end-of-line at end-of-file".format(path, lineNo))
+
+            # 7. No "empty" (or whitespace) lines at end-of-file.
+            # Cases:
+            #   1. There is an EOL at EOF. Since the lines array is constructed by splitting on '\n',
+            #      the final element in the lines array will be an empty string. This is expeced and allowed.
+            #      Then continue to check for earlier empty lines.
+            #   2. There is no EOF at EOL.
+            #      Check for empty lines, including the final line.
+            expectEmptyFinalLine = not status.hasIssue("has-no-eol-character-at-end-of-file") # i.e. we have EOL at EOF
+            finalLineNo = len(lines)
+            lineNo = finalLineNo
+            for line in reversed(lines):
+                if lineNo == finalLineNo and expectEmptyFinalLine:
+                    assert len(line) == 0 # this is guaranteed, since lines = data.split('\n') and there is an EOL at EOF
+                else:
+                    s = line.strip(b" ") # whitespace-only-lines count as empty
+                    if len(s) == 0:
+                        status.incrementIssueCount("has-empty-line-at-end-of-file")
+                        if verbose:
+                            print("error: {0}({1}) empty line at end-of-file".format(path, lineNo))
+                    else:
+                        break # stop checking once we encounter a non-empty line
+                lineNo -= 1
 
 
 print("SUMMARY")
