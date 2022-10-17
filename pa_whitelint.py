@@ -27,7 +27,12 @@ sourceFileTypes = ["*.c", "*.h", "*.cpp", "*.cxx", "*.hxx"]
 dirs = ["src", "include", "examples", "test", "qa"]
 
 # Exclude files or directories with the following names:
-excludePathParts = ["ASIOSDK", "iasiothiscallresolver.cpp", "iasiothiscallresolver.h", "mingw-include"]
+excludePathParts = [
+    "ASIOSDK",
+    "iasiothiscallresolver.cpp",
+    "iasiothiscallresolver.h",
+    "mingw-include",
+]
 
 indentSpaceCount = 4
 
@@ -40,6 +45,7 @@ verboseBadIndenting = True
 
 class FileStatus:
     """Issue status for a particular file. Stores issue counts for each type of issue."""
+
     def __init__(self, path):
         self.path = path
         issueNames = [
