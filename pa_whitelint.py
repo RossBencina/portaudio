@@ -1,5 +1,8 @@
 # PortAudio Repository Whitespace Linter
 #
+# Run this script from the root of the repository using the command:
+#   python pa_whitelint.py
+#
 # Check all source files for the following:
 #   1. Consistent line endings are used throughout each file.
 #   2. No tabs are present. Use spaces for indenting.
