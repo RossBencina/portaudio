@@ -26,6 +26,8 @@ dirs = ["src", "include", "examples", "test", "qa"]
 # Exclude files or directories with the following names:
 excludePathParts = ["ASIOSDK", "iasiothiscallresolver.cpp", "iasiothiscallresolver.h", "mingw-include"]
 
+indentSpaceCount = 4
+
 verbose = True
 checkBadIndenting = True
 verboseBadIndenting = True
@@ -173,7 +175,7 @@ for dir in dirs:
                         print("error: {0}({1}) contains tab".format(path, lineNo))
                 lineNo += 1
 
-            data = data.replace(b"\t", b"    ") # normalize tabs to 4 spaces for indent algorithm below
+            data = data.replace(b"\t", b" "*indentSpaceCount) # normalize tabs to <indentSpaceCount> spaces for indent algorithm below
             lines = data.split(b"\n") # recompute lines, relies on newline normalization above
 
             # 3. Correct leading whitespace / bad indenting
@@ -192,8 +194,8 @@ for dir in dirs:
                         m = leadingWhitespaceRe.search(line)
                         indent = m.end() - m.start()
                         if indent != len(line): # ignore whitespace lines, they are considered trailing whitespace
-                            if indent % 4 is not 0 and indent != previousIndent:
-                                # potential bad indents are not multiples of 4,
+                            if indent % indentSpaceCount != 0 and indent != previousIndent:
+                                # potential bad indents are not multiples of <indentSpaceCount>,
                                 # and are not indented the same as the previous line
                                 s = previousLine
                                 if not allowStrangeIndentOnFollowingLine(previousLine) and not allowStrangeIndentOfLine(line):
