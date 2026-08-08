@@ -57,15 +57,17 @@ With the last command, by default, the build system will be configured to build 
 
 (NOTE: PortAudio also supports the standard CMake `BUILD_SHARED_LIBS` mechanism.)
 
-Also, by default, CMake will build a debug version of PortAudio. If you want a release version, add `--config Release` to the last command as seen in the three commands above:
+On Unix systems, or when using Makefiles on Windows, this will also configure CMake to build a debug version of PortAudio by default. If you want a release version by default, add `-DCMAKE_BUILD_TYPE=Release` to the last command as seen in the three commands above:
 
-    cmake --config Release ../portaudio
+    cmake -DCMAKE_BUILD_TYPE=Release ../portaudio
 
-You can also mix and match `--config` and `-DPA_BUILD_SHARED_LIBS` like so if desired:
+You can also mix and match `-DCMAKE_BUILD_TYPE=Release` and `-DPA_BUILD_SHARED_LIBS` like so if desired:
 
-    cmake -DPA_BUILD_SHARED_LIBS=ON --config Release ../portaudio
+    cmake -DPA_BUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release ../portaudio
 
-At this point, the build files for PortAudio have been generated and placed in the `build` directory. For Windows, the library files will be in a folder named after your configuration (e.g., `Debug/`, `Release/`, `RelWithDebInfo/`, etc.). For other systems, they will simply be in the root of your build directory. Now you are ready to begin the actual build.
+At this point, the build files for PortAudio have been generated and placed in the `build` directory.
+
+When using Visual Studio to build on Windows, or the "Ninja Multi-Config" generator on Unix, the library files will be in a folder named after your configuration (e.g., `Debug/`, `Release/`, `RelWithDebInfo/`, etc.). Otherwise, they will simply end up in the root of your build directory. Now you are ready to begin the actual build.
 
 @subsubsection compile_cmake_general_configure_tests_examples Building Tests and Examples
 
@@ -85,15 +87,15 @@ To build _both_ examples _and_ tests alongside a normal PortAudio build, run the
 
     cmake -DPA_BUILD_TESTS=ON -DPA_BUILD_EXAMPLES=ON ../portaudio
 
-Later, when you build the tests, they will be under the `tests/` directory in your build folder. For examples, they will be under `examples/`. On Windows, both tests and example will be under an additional folder named after the configuration you built in their respective folders. By default, this will be `Debug`, but it could also be under `Release/` if you built the `Release` configuration.
+Later, when you build the tests, they will be under the `test/` directory in your build folder. For examples, they will be under `examples/`. On Windows, both tests and example will be under an additional folder named after the configuration you built in their respective folders. By default, this will be `Debug`, but it could also be under `Release/` if you built the `Release` configuration.
 
 PortAudio's build options are explained further in @ref compile_cmake_general_options. For more about running PortAudio tests and examples, see @ref compile_cmake_general_running_tests_examples.
 
 @subsubsection compile_cmake_general_configure_installation Configuring the Install Directory
 
-If you plan to install your build of PortAudio later, you may want to adjust the default installation directory. On Linux, this is /usr/local by default. To do this, add `-DCMAKE_INSTALL_PREFIX=/path/to/new/install/location` after the `cmake` command. For example, if you want to have your PortAudio build install to `/opt`, run the following command to configure CMake:
+If you plan to install your build of PortAudio later, you may want to adjust the default installation directory. On Linux, this is /usr/local by default. To do this, add `-DCMAKE_INSTALL_PREFIX=/path/to/new/install/location` after the `cmake` command. For example, if you want to have your PortAudio build install to `/opt/portaudio`, run the following command to configure CMake:
 
-    cmake -DCMAKE_INSTALL_PREFIX=ON ../portaudio
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/portaudio ../portaudio
 
 @subsection compile_cmake_general_build Step 3: Build PortAudio
 
@@ -102,6 +104,10 @@ Now that you have configured the build system, to build PortAudio run one last c
     cmake --build .
 
 Alternatively, you can directly invoke the build tool that CMake has generated build files for. For example, if CMake has generated Makefiles (usually the default on macOS, Linux, and similar OSes), then you could simply run `make`. If CMake has generated a Visual Studio project (`.sln`, `.vcproj`) (usually the default on Windows), you could open the generated Visual Studio project and build PortAudio from within Visual Studio (or alternatively run `msbuild` if that's your preference).
+
+If you are using a [multi-configuration generator](https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#build-configurations) such as Visual Studio or "Ninja Multi-Config", you can use the `--config` option to control which configuration (Debug, Release, etc...) gets built:
+
+   cmake --build . --config Debug
 
 To summarize all of the steps above:
 
@@ -117,17 +123,17 @@ Optionally, if you want to install your newly built PortAudio build, you can do 
 
     cmake --build . -t install
 
-As usual, you can alternatively invoke the build tool CMake has generated build files for itself. Be sure to build the `install` target. Note that this will install PortAudio into your system directories, so be careful
+As usual, you can alternatively invoke the build tool CMake has generated build files for itself. Be sure to build the `install` target. Note that this will install PortAudio into your system directories, so be careful.
 
 @subsection compile_cmake_general_running_tests_examples Running Tests and Examples
 
-As stated earlier, tests and examples are located within the `test` and `examples` folders, respectively. Likewise, Windows has an exception where both tests and examples are under an additional subdirectory named after the current configuration in their respective directories. (This also happens with multi-config generators too). In this example, we are going to assume that you have built these tests with the default `Debug` configuration. If your configuration is different, then adjust the examples accordingly. For a list of all possible build configurations, please see @ref compile_cmake_options_general.
+As stated earlier, tests and examples are located within the `test` and `examples` folders, respectively. Likewise, Windows has an exception where both tests and examples are under an additional subdirectory named after the current configuration in their respective directories. (This also happens with multi-config generators on other platforms). In this example, we are going to assume that you have built these tests with the default `Debug` configuration. If your configuration is different, then adjust the examples accordingly. For a list of all possible build configurations, please see @ref compile_cmake_options_general.
 
 To list tests, run the following command in the same terminal or command prompt window used earlier (substitute `ls` with `dir` at the Windows Command Prompt):
 
     ls test/
 
-On Windows, `test/` should be the following:
+On Windows with Visual Studio, `test/` should be the following:
 
     dir test\Debug
 
@@ -135,7 +141,7 @@ To actually run a test, run the following command:
 
     test/patest_sometest
 
-On Windows:
+On Windows with Visual Studio:
 
     test/Debug/patest_sometest.exe
 
@@ -178,11 +184,13 @@ Once configuration is successful, you can then start the build by running the fo
 
 This builds a _debug_ config of PortAudio. If you need a release config of PortAudio, add `--config Release` to the above command like so:
 
-    C:\pabuild> cmake --config Release --build .
+    C:\pabuild> cmake --build . --config Release
+
+(note that `--config Release` must come *after* `--build .` for this to work)
 
 Alternatively, you can open the resulting `portaudio.sln` file in Visual Studio and build PortAudio that way.
 
-The actual PortAudio library itself will be output to a directory named after the configuration you just built. For example, if you built the `Debug` configuration, your files will be under `Debug/` in your build folder. If you built the `Release` configuration, your files will be under `Release/` in your build folder. This is due to CMake's Visual Studio Generator being a multi-config generator (meaning you can build multiple configurations without having to regenerate the build system). If you were building CMake on Linux using the Ninja Multi-Config generator, you will notice similar behavior.
+The actual PortAudio library itself will be output to a directory named after the configuration you just built. For example, if you built the `Debug` configuration, your files will be under `Debug/` in your build folder. If you built the `Release` configuration, your files will be under `Release/` in your build folder. This is due to CMake's Visual Studio Generator being a multi-config generator (meaning you can build multiple configurations without having to regenerate the build system). When building on Unix using the Ninja Multi-Config generator, you will notice similar behavior.
 
 For more CMake options, see @ref compile_cmake_options_general.
 
@@ -204,21 +212,21 @@ First, create a build folder and change into it:
 
     $ mkdir build && cd build
 
-Then, run the configure command to configure the build for a **static library**:
+Then, run the `cmake` command to configure the build for a **static library**:
 
-    $ cmake -G "Unix Makefiles" /path/to/portaudio/source
+    $ cmake /path/to/portaudio/source
 
-If you want a **shared library** configuration, add `-DPA_BUILD_SHARED_LIBS=ON` after `-G "Unix Makefiles"` like so:
+If you want a **shared library** configuration, add `-DPA_BUILD_SHARED_LIBS=ON`:
 
-    $ cmake -G "Unix Makefiles" -DPA_BUILD_SHARED_LIBS=ON /path/to/portaudio/source
+    $ cmake -DPA_BUILD_SHARED_LIBS=ON /path/to/portaudio/source
 
-(In both cases, the `-G "Unix Makefiles"` is used to ensure Unix Makefiles are generated).
+By default, this will create Unix Makefiles.  If you have [Ninja](https://ninja-build.org/) installed and wish to use it instead, you can add `-G Ninja` to the configure command.  To use the abovementioned "Ninja Multi-Config" generator, you could add `-G "Ninja Multi-Config"`
 
 Once configuration is done, run the following command to build PortAudio:
 
-    $ make
+    $ cmake --build .
 
-Alternatively, you can run `cmake --build .` this does the same thing. For either command you use, add `-j <num>` to speed up the build (`<num>` being the number of jobs to give the build, usually based on the number CPU threads on your computer).
+You can add `-j <num>` to speed up the build (`<num>` being the number of jobs to give the build, usually based on the number CPU threads on your computer).
 
 Unlike on Windows, the actual library files will be in the root of build directory regardless of configuration.
 
@@ -231,8 +239,8 @@ From an alternative perspective, if you are familiar with autotools, you'll real
 would be:
 
     $ cmake -DCMAKE_INSTALL_PREFIX=/install_location /path/to/portaudio/source # Assume we're in the build directory 'pabuild'
-    $ make
-    $ make install
+    $ cmake --build .
+    $ cmake --build . --target install
 
 @subsection compile_cmake_audio_backends Audio Backend Developer Packages
 
@@ -263,12 +271,11 @@ Building PortAudio with CMake does not automatically build tests. To build tests
 
 @section compile_cmake_options CMake Build Options
 
-This section contains options that configure your build. Some options are specific to PortAudio while others are general CMake options. Regardless if whether they are specific to PortAudio or not, with one exception, all options are always applied when configuring the build system. The only exception is `--config`, since it isn't always applied during the configure step. (See below for more information on that parameter and when to use it).
+This section contains options that configure your build. Some options are specific to PortAudio while others are general CMake options. Regardless if whether they are specific to PortAudio or not, these options are always applied when configuring the build system.
 
 @subsection compile_cmake_options_general General CMake Options
 
-- `--config <buildtype>`: Changes the configuration the build system will build. Possible configurations are `Release` for release builds, `Debug` for debug builds, `RelWithDebInfo` for debuggable release builds, `MinSizeRel` for the smallest possible build, and `None` for no configuration. If using with a multi-config generator, such as with Visual Studio, this applies _after_ generating the build system (multi-config generators can build multiple configurations without needing a reconfigure). If using a non-multi-config generator, such as with Unix Makeiles, this applies _when_ generating the build system (non-multi-config generators can only build one configuration at a time).
-
+- `-DCMAKE_BUILD_TYPE=<buildtype>`: Changes the configuration the build system will build. Possible configurations are `Release` for release builds, `Debug` for debug builds, `RelWithDebInfo` for debuggable release builds, `MinSizeRel` for the smallest possible build, and `None` for no configuration.
 - `-DCMAKE_INSTALL_PREFIX=/install_prefix`: When running `make install` or similar, install to `/install_prefix` instead of CMake's default of `/usr`.
 
 @subsection compile_cmake_options_pa PortAudio Specific Options
@@ -309,11 +316,11 @@ This section contains options that configure your build. Some options are specif
 
 @section cmake_using Using PortAudio in Your CMake Project
 
-PortAudio defines two CMake targets: `portaudio`, for a dynamic library, and `portaudio_static`, for a static library.
+PortAudio defines two CMake targets: `PortAudio::portaudio`, for a dynamic library, and `PortAudio::portaudio_static`, for a static library, which can be added to `target_link_libraries` for your project's targets.
 
 To use these targets, there are two ways: using `find_package()` or `add_subdirectory()`.
 
-@subsection cmake_using_find_package Using the `find_package()` CMake Command
+@subsection cmake_using_find_package Using the find_package() CMake Command
 
 The easiest way is to use the aforementioned targets is to have PortAudio installed via a package manager (your distribution's package manager, vcpkg, etc) and use the `find_package()` CMake command. Use the command as follows:
 
@@ -323,14 +330,47 @@ Optionally add `REQUIRED` after `portaudio` to make it a required dependency:
 
     find_package(portaudio REQUIRED)
 
-This also works if you installed PortAudio as described above in @ref compile_cmake_general_build and the install prefix (specified by `CMAKE_INSTALL_PREFIX`) used is in either your system `PATH` or `CMAKE_MODULE_PATH`.
+Unfortunately, not all distribution packages currently install the necessary `.cmake` files for this to function correctly, see @ref cmake_using_pkg_config below for another option.
 
-@subsection cmake_using_add_subdirectory Using the `add_subdirectory()` CMake Command
+This also works if you installed PortAudio as described above in @ref compile_cmake_general_build and the install prefix (specified by `CMAKE_INSTALL_PREFIX`) used is:
+
+- also your project's [`CMAKE_INSTALL_PATH`](https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html)
+- in the CMake or environment variable [`CMAKE_PREFIX_PATH`](https://cmake.org/cmake/help/latest/variable/CMAKE_PREFIX_PATH.html)
+- the prefix for a directory in your system `PATH` (for example, if you installed PortAudio in `/opt/portaudio`, your `PATH` contains `/opt/portaudio/bin`)
+
+If none of these options are possible, you can also set `PortAudio_DIR` to point to the installed directory containing these files when configuring your project, for instance, if you installed PortAudio in `/home/me/portaudio19`:
+
+    cmake -S . -B build -DPortAudio_DIR=/home/me/portaudio19/lib/cmake/portaudio
+
+@subsection cmake_using_add_subdirectory Using the add_subdirectory() CMake Command
 
 If you do not want to install PortAudio on your system, you may also include PortAudio in your project's source tree (e.g., as a Git submodule) or similar. In that case, use the `add_subdirectory()` CMake command as follows:
 
-    add_subdirectory("/path/to/portaudio/source")
+    add_subdirectory(relative/path/to/portaudio)
 
-Optionally, you may add an extra parameter for the build directory and/or `EXCLUDE_FROM_ALL`. If you add `EXCLUDE_FROM_ALL`, this excludes PortAudio from a default build.
+In this case, you must also remove the `PortAudio::` namespace from the `portaudio` or `portaudio_static` target when using it in your project, and also ensure that these target names don't collide with any existing ones.  This is a [longstanding issue in CMake](https://gitlab.kitware.com/cmake/cmake/-/work_items/22687).
+
+You can also add PortAudio from a directory outside your source tree, in which case you must add a second argument for the subdirectory of your build directory where the PortAudio binaries will be built.
+
+    add_subdirectory(/absolute/path/to/portaudio portaudio)
+
+Make sure it doesn't conflict with an existing directory in your project!
+
+Optionally, you may add `EXCLUDE_FROM_ALL`. If you add `EXCLUDE_FROM_ALL`, this excludes PortAudio from a default build.
+
+@subsection cmake_using_pkg_config Using pkg-config
+
+As of this writing, not all GNU/Linux distribution packages of PortAudio install the necessary `.cmake` files for `find_package()` to work correctly.  If this is the case, you can also use
+[`pkg-config`](http://pkg-config.freedesktop.org/) to obtain the necessary compiler flags to link programs against PortAudio.  For example, if your program's target is called `patest`:
+
+     find_package(PkgConfig)
+     if(PKG_CONFIG_FOUND)
+       pkg_check_modules(PORTAUDIO portaudio-2.0)
+       if(PORTAUDIO_FOUND)
+         target_link_libraries(patest ${PORTAUDIO_LIBRARIES})
+         target_include_directories(patest PUBLIC ${PORTAUDIO_INCLUDE_DIRS})
+       endif()
+     endif()
+
 
 */
