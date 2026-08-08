@@ -277,7 +277,7 @@ This section contains options that configure your build. Some options are specif
 
 @note All options here default to `ON` if available except for the OSS, ASIO, and skeleton backends.
 
-- **`-DPA_USE_ALSA=ON|OFF`**: (Linux/Unix-like/etc. Only). Use the ASLA host API. Requires ALSA.
+- **`-DPA_USE_ALSA=ON|OFF`**: (Linux/Unix-like/etc. Only). Use the ALSA host API. Requires ALSA.
     - **`-DPA_ALSA_DYNAMIC=ON|OFF`**: Dynamically load libasound with dlopen using @ref PaAlsa_SetLibraryPathName. Off by default[3].
 - **`-DPA_USE_ASIO=ON|OFF`**: (Windows Only). Use the ASIO host API. Requires the ASIO SDK[1].
 - **`-DPA_USE_AUDIOIO=ON|OFF`**: (Solaris Only). Use the audioio host API.
