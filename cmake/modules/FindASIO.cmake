@@ -14,6 +14,13 @@ This module provides an `ASIO::host` IMPORT library target for building host
 applications which use ASIO drivers. If you want to build an ASIO driver, this
 module may serve as a useful start but you will need to modify it.
 
+As of ASIO-SDK_2.3.4_2025-10-15, the ASIO SDK file host/pc/asiolist.cpp contains
+a bug. This cmake file detects the bug and patches the bug if it is detected.
+Alternatively, you can supply an SDK with the bug already patched, or supply an
+SDK with a file host/pc/patched_asiolist.cpp which, if present, will be used in
+preference to host/pc/asiolist.cpp. All of these options work without additional
+configuration.
+
 #]=======================================================================]
 
 if(NOT WIN32)
@@ -64,7 +71,7 @@ if(ASIO_ROOT)
     add_library(ASIO::host INTERFACE IMPORTED)
 
     # Work around ASIO SDK pc/asiolist.cpp bug where `lpdrv` is allocated using array new:
-    #   lpdrv = new ASIODRVSTRUCT[1]
+    #   lpdrv = new ASIODRVSTRUCT[1];
     # but deleted using scalar delete:
     #   delete lpdrv; // BUG! should be `delete [] lpdrv;`
     #
